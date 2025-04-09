@@ -6,7 +6,6 @@ services:
     restart: always
     environment:
       ACCEPT_EULA: 'Y'
-      # MSSQL_SA_PASSWORD: 'Verifone@2024!!!'
       MSSQL_SA_PASSWORD: /run/secrets/mssql_sa_password
       MSSQL_DATA_DIR: /var/opt/mssql/data
       MSSQL_TCP_PORT: 1433 
