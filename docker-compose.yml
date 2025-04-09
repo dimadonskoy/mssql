@@ -1,0 +1,44 @@
+services:
+  mssql:
+    container_name: mssql-db
+    hostname: mssql-db
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    restart: always
+    environment:
+      ACCEPT_EULA: 'Y'
+      # MSSQL_SA_PASSWORD: 'Verifone@2024!!!'
+      MSSQL_SA_PASSWORD: /run/secrets/mssql_sa_password
+      MSSQL_DATA_DIR: /var/opt/mssql/data
+      MSSQL_TCP_PORT: 1433 
+    ports: 
+      - "1433:1433"
+    volumes:
+      - ./sqldata:/var/opt/mssql/data
+      - ./log:/var/opt/mssql/log
+      - ./secrets:/var/opt/mssql/secrets
+      - ./backup:/var/opt/mssql/backup
+    secrets:
+        - mssql_sa_password
+     
+    command: >
+      /bin/bash -c "
+        /opt/mssql/bin/sqlservr & 
+        sleep 20 && 
+        /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'Verifone@2024!!!' -C -Q \"
+        IF DB_ID('POS') IS NULL 
+        BEGIN 
+          CREATE DATABASE [POS] ON 
+            (FILENAME = '/var/opt/mssql/data/POS01.mdf'), 
+            (FILENAME = '/var/opt/mssql/data/POS02.ndf'), 
+            (FILENAME = '/var/opt/mssql/data/POS03.ndf'), 
+            (FILENAME = '/var/opt/mssql/data/POS04.ndf'), 
+            (FILENAME = '/var/opt/mssql/data/POS_log.ldf') 
+          FOR ATTACH 
+        END
+        \"
+        tail -f /dev/null
+      "
+
+secrets:
+  mssql_sa_password:
+    file: ./secrets/mssql_sa_password.b64
