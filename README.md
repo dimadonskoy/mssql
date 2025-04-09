@@ -21,12 +21,12 @@ A complete and automated setup to run Microsoft SQL Server 2022 in Docker with p
 your-project/
 ├── backup/                      # SQL Server backup files
 ├── log/                         # SQL Server log files
-├── secrets/                     # Docker secrets directory
-│   └── mssql_sa_password.b64    # Base64-encoded SA password
 ├── sqldata/                     # SQL data files
 │   └── sqldata.zip              # Contains .mdf, .ndf, .ldf
 ├── docker-compose.yml           # Docker Compose configuration
-├── setup.bat                    # Windows setup script
+├── run-compose.bat              # Windows setup script
+├── .env                         # Secret file
+├── .gitignore                   # Git ignore file
 └── README.md                    # This file
 ```
 
@@ -78,9 +78,10 @@ services:
     restart: always
     environment:
       ACCEPT_EULA: 'Y'
-      MSSQL_SA_PASSWORD: /run/secrets/mssql_sa_password
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD}
       MSSQL_DATA_DIR: /var/opt/mssql/data
       MSSQL_TCP_PORT: 1433 
+      MSSQL_PID: Express
     ports: 
       - "1433:1433"
     volumes:
@@ -88,13 +89,11 @@ services:
       - ./log:/var/opt/mssql/log
       - ./secrets:/var/opt/mssql/secrets
       - ./backup:/var/opt/mssql/backup
-    secrets:
-      - mssql_sa_password
     command: >
       /bin/bash -c "
         /opt/mssql/bin/sqlservr & 
         sleep 20 && 
-        /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'Verifone@2024!!!' -C -Q \"
+        /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P '${MSSQL_SA_PASSWORD}' -C -Q \"
         IF DB_ID('POS') IS NULL 
         BEGIN 
           CREATE DATABASE [POS] ON 
@@ -111,7 +110,7 @@ services:
 
 secrets:
   mssql_sa_password:
-    file: ./secrets/mssql_sa_password.b64
+    file: .env
 ```
 
 ---
